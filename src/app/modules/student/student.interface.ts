@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 
 export type Gurdian = {
   fatherName: string;
@@ -17,6 +18,7 @@ export type LocalGaurdian = {
 export type Student = {
   id: string;
   password: string;
+  user: Types.ObjectId;
   name: User;
   gender: "Male" | "Female";
   dateOfBirth: string;
@@ -25,6 +27,7 @@ export type Student = {
   gurdian: Gurdian;
   localGuardian : LocalGaurdian;
   profileImg?: string;
-  isActive : 'active' | 'inActive';
+  admissionSemester: Types.ObjectId;
+  academicDepartment: Types.ObjectId;
   isDeleted : boolean
 };

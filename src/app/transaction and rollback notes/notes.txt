@@ -1,0 +1,10 @@
+when to use transaction and rollback : 
+   when i use 2/more write operation in db
+   like when i careate user and student at the same time
+
+
+transaction Steps: 
+   startSession() //isolated environment create kore
+   StartTransaction()
+   CommitTransaction() or abortTransaction()
+   endSession()

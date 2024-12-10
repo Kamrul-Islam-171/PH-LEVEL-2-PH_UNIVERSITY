@@ -40,7 +40,13 @@ const localguardianSchema = new Schema<LocalGaurdian>({
 
 const studentSchema = new Schema<Student>({
   id: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  user: {
+    type: Schema.Types.ObjectId,  // referencing
+    required: [true, "User id is required"],
+    unique: true,
+    ref: 'UserModel'   // UserModel er sathe referencing kore fellam
+  },
+  // password: { type: String, required: true },
   name: {
     type: userSchema,
     required: true,
@@ -62,12 +68,23 @@ const studentSchema = new Schema<Student>({
     type: localguardianSchema,
     required: true,
   },
-  profileImg: { type: String, required: true },
-  isActive: {
-    type: String,
-    enum: ["active", "inActive"],
-    default: "active",
+
+
+  //refernding 
+  admissionSemester: {
+    type: Schema.Types.ObjectId,
+    ref: 'academicSemesterModel' // ref korbo model er sathe
   },
+  academicDepartment: {
+    type: Schema.Types.ObjectId,
+    ref: 'AcademicDepartmentModel' // ref korbo model er sathe
+  },
+  profileImg: { type: String, required: true },
+  // isActive: {
+  //   type: String,
+  //   enum: ["active", "inActive"],
+  //   default: "active",
+  // },
 
   isDeleted: {
     type: Boolean,
@@ -85,38 +102,38 @@ const studentSchema = new Schema<Student>({
   },
 });
 
-//document middle ware
-studentSchema.pre("save", async function (next) {
-  // console.log(this, 'pre hook : we wil ssave data');
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
+// //document middle ware
+// studentSchema.pre("save", async function (next) {
+//   // console.log(this, 'pre hook : we wil ssave data');
+//   this.password = await bcrypt.hash(this.password, 12);
+//   next();
+// });
 
-studentSchema.post("save", function (doc, next) {
-  doc.password = "";
-  next();
-});
+// studentSchema.post("save", function (doc, next) {
+//   doc.password = "";
+//   next();
+// });
 
 //query middle ware
-studentSchema.pre("find", function (next) {
-  this.find({isDeleted : {$ne : true}})
+// studentSchema.pre("find", function (next) {
+//   this.find({isDeleted : {$ne : true}})
 
-  next();
-});
-studentSchema.pre("findOne", function (next) {
-  this.find({isDeleted : {$ne : true}})
+//   next();
+// });
+// studentSchema.pre("findOne", function (next) {
+//   this.find({isDeleted : {$ne : true}})
 
-  next();
-});
+//   next();
+// });
 
 //aggreage middleware
-studentSchema.pre("aggregate", function (next) {
-  //[{$match : {isDeleted : {$ne : true}}}] ei ta add korte hobe pipeline e
+// studentSchema.pre("aggregate", function (next) {
+//   //[{$match : {isDeleted : {$ne : true}}}] ei ta add korte hobe pipeline e
 
-  this.pipeline().unshift({$match : {isDeleted : {$ne : true}}})
+//   this.pipeline().unshift({$match : {isDeleted : {$ne : true}}})
 
-  next();
-});
+//   next();
+// });
 
 // 3. Create a Model.
 export const StudentModel = model<Student>("Student", studentSchema);
