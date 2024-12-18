@@ -25,7 +25,7 @@ const GetStudentFromDB = async () => {
 const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
   // amra pagination, sorting j method e korlam tar name = "method chaning"
 
-  console.log(query);
+  // console.log('queryfrom student service = ',query);
 
   // const queryObject = {...query};
 
@@ -100,6 +100,7 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
 
   const studentQuery = new QueryBuilder(
     StudentModel.find()
+      .populate("user")
       .populate("admissionSemester")
       .populate({
         path: "academicDepartment",

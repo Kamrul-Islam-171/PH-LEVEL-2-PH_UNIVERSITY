@@ -135,6 +135,10 @@ const GetSdudents  = catchAsync(async (req, res) => {
 });
 
 const getAllStudents = catchAsync(async(req : Request, res : Response) => {
+
+    // console.log('this is from token = ',req.user)
+
+    console.log({cookie : req.cookies})
  
     const result = await StudentServices.getAllStudentsFromDB(req.query);
     sendResponse(res, {

@@ -2,6 +2,7 @@ import express from "express";
 import ValidateRequest from "../../middlewares/validateRequests";
 import { CourseValidations } from "./course.validation";
 import { CourseControllers } from "./course.controller";
+import Auth from "../../middlewares/auth";
 
 const router = express.Router();
 
@@ -38,6 +39,6 @@ router.delete(
   CourseControllers.removeFacultiesFromCourse,
 );
 
-router.get("/", CourseControllers.getAllCourses);
+router.get("/", Auth(), CourseControllers.getAllCourses);
 
 export const CourseRoutes = router;

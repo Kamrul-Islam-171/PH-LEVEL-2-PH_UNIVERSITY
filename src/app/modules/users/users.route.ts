@@ -4,6 +4,8 @@ import { AnyZodObject } from "zod";
 import { studentZodValidations } from "../student/student.zod.validation";
 import ValidateRequest from "../../middlewares/validateRequests";
 import { createFacultyValidationSchema } from "../faculty/faculty.validation";
+import Auth from "../../middlewares/auth";
+import { USER_ROLE } from "./user.constant";
 
 const router = express.Router();
 
@@ -31,12 +33,14 @@ const router = express.Router();
 // router.post('/create-student', senaBahini("kamrul islam"), UserController.createStudent);
 router.post(
   "/create-student",
+  Auth(USER_ROLE.admin),
   ValidateRequest(studentZodValidations.CreatestudentZodValidationSchema),
   UserController.createStudent
 );
 
 router.post(
   '/create-faculty',
+  Auth(USER_ROLE.admin),
   ValidateRequest(createFacultyValidationSchema),
   UserController.createFaculty,
 );

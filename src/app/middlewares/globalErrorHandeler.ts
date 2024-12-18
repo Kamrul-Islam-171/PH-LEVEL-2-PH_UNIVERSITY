@@ -33,6 +33,7 @@ let globalErrorHandler = (
   //checking if it is zod error
   //checking err ta zodError er sub class ki na. tai instaceof use kora hoy
   if(err instanceof ZodError) {
+    //if(err?.name === 'ZodError') ei vabe dileo hobe
     const simplifiedError = HandleZodError(err);
 
     statusCode = simplifiedError.statusCode;

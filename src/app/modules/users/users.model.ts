@@ -1,8 +1,18 @@
 import { model, Schema } from "mongoose";
-import { TUser } from "./users.interface";
-import  bcrypt  from 'bcrypt';
+import { TUser, UserStaticModel } from "./users.interface";
+import bcrypt from "bcrypt";
 
-const UsersSchema = new Schema<TUser>(
+/*
+
+important notes
+
+eikhane amra user exist kore ki na ei gula check korte pari (static or pre middleware hook user kore)
+
+jodi static use kori taile type er jaygay interface use korche hobe (check mongoose documentation)
+
+*/
+
+const UsersSchema = new Schema<TUser, UserStaticModel>(
   {
     id: {
       type: String,
@@ -11,6 +21,10 @@ const UsersSchema = new Schema<TUser>(
     password: {
       type: String,
       required: true,
+      select: 0, // tahole get korar time e populate korle password ta show korbe na
+    },
+    passwordChangeAt: {
+      type: Date,
     },
     needsPasswordChange: {
       type: Boolean,
@@ -36,7 +50,9 @@ const UsersSchema = new Schema<TUser>(
 //document middle ware
 UsersSchema.pre("save", async function (next) {
   // console.log(this, 'pre hook : we wil ssave data');
+  // console.log({'userBeforeHash': this});
   this.password = await bcrypt.hash(this.password, 12);
+  // console.log({'userAfterHashPass': this});
   next();
 });
 
@@ -45,4 +61,36 @@ UsersSchema.post("save", function (doc, next) {
   next();
 });
 
-export const UserModel = model<TUser>("UserModel", UsersSchema);
+UsersSchema.statics.isUserExistsByCustomID = async function (id: string) {
+  return await UserModel.findOne({ id }).select("+password");
+};
+UsersSchema.statics.isPasswordMatched = async function (
+  plaintextPass,
+  hassedPass
+) {
+  return await bcrypt.compare(plaintextPass, hassedPass);
+};
+
+// normarl function. karon kono promise return korbe na
+UsersSchema.statics.isJWTIssuedBeforePasswordChange = function (
+  passwordChangeTimeStamp: Date,
+  jwtIssuedTimestamp: number
+) {
+  // passwordChangeTimestamp = pass kokhon change hoiche
+  // jwtissuedtimestamp = jwt token kokohon create hoichilo.
+
+  // true hoile = pass recently change hoiche
+  // console.log(passwordChangeTimeStamp, jwtIssuedTimestamp);
+  // return passwordChangeTimeStamp > jwtIssuedTimestamp;
+
+  // const passChangeTimestamp = new Date(passwordChangeTimeStamp).getTime(); mili second e dibe time k
+  // r jwt  second e ache. tai tar sathe 1000 dia multiply korbo
+  const passChangeTimestamp = new Date(passwordChangeTimeStamp).getTime();
+  jwtIssuedTimestamp = jwtIssuedTimestamp * 1000;
+  // console.log(passChangeTimestamp, jwtIssuedTimestamp)
+  return passChangeTimestamp > jwtIssuedTimestamp;
+};
+export const UserModel = model<TUser, UserStaticModel>(
+  "UserModel",
+  UsersSchema
+);

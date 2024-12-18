@@ -6,12 +6,13 @@ import { error } from "console";
 import globalErrorHandler from "./app/middlewares/globalErrorHandeler";
 import notFound from "./app/middlewares/notFound";
 import router from "./app/route";
-
+import cookieParser from "cookie-parser";
 const express = require("express");
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({origin:['http://localhost:5173']}));
+app.use(cookieParser())
 
 //application routes
 
