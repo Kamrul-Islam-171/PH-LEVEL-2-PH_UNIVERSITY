@@ -6,6 +6,7 @@ import httpStatus from "http-status";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { createToken } from "./auth.utils";
+import { sendEmail } from "../../utils/sendEmail";
 
 const loginUser = async (payload: TLoginUser) => {
   const { id } = payload;
@@ -186,8 +187,110 @@ const refreshToken = async (token: string) => {
   };
 };
 
+const forgetPass = async(id:string) => {
+
+  const user = await UserModel.isUserExistsByCustomID(id);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
+  }
+  // checking if the user is already deleted
+  const isDeleted = user?.isDeleted;
+
+  if (isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+  }
+
+  // checking if the user is blocked
+  const userStatus = user?.status;
+
+  if (userStatus === 'blocked') {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
+  }
+
+  const jwtPayload = {
+    id: user.id,
+    role: user.role,
+  };
+
+  const resetToken = createToken(
+    jwtPayload,
+    config.access_secret as string,
+    '10m',
+  );
+  console.log(resetToken);
+
+ // link generate kortachi
+  const resetUILink = `${config.RESET_PASS_URL}?id=${user.id}&token=${resetToken}`;
+
+  sendEmail(user.email, resetUILink);
+
+  // console.log(resetUILink);
+}
+
+const resetPassword = async (
+  payload: { id: string; newPassword: string },
+  token: string,
+) => {
+
+  const {id} = payload;
+
+  const user = await UserModel.isUserExistsByCustomID(id);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
+  }
+  // checking if the user is already deleted
+  const isDeleted = user?.isDeleted;
+
+  if (isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+  }
+
+  // checking if the user is blocked
+  const userStatus = user?.status;
+
+  if (userStatus === 'blocked') {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
+  }
+
+  // j secret dia token create korchi , oi token dia e verify korte hobe
+  const decoded = jwt.verify(
+    token,
+    config.access_secret as string,
+  ) as JwtPayload;
+
+  // console.log(decoded)
+  if (payload.id !== decoded.id) {
+    console.log(payload.id, decoded.id);
+    throw new AppError(httpStatus.FORBIDDEN, 'You are forbidden!');
+  }
+
+  //hash new password
+  const newHashedPassword = await bcrypt.hash(
+    payload.newPassword,
+    Number(12),
+  );
+
+  await UserModel.findOneAndUpdate(
+    {
+      id: decoded.id,
+      role: decoded.role,
+    },
+    {
+      password: newHashedPassword,
+      needsPasswordChange: false,
+      passwordChangedAt: new Date(),
+    },
+  );
+
+  
+};
+
 export const AuthServices = {
   loginUser,
   changePassword,
-  refreshToken
+  refreshToken,
+  forgetPass,
+  resetPassword
 };

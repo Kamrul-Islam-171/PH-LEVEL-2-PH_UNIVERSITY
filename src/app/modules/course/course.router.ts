@@ -34,11 +34,14 @@ router.delete("/:id", CourseControllers.deleteCourse);
 // );
 
 router.delete(
-  '/:courseId/remove-faculties',
+  "/:courseId/remove-faculties",
   ValidateRequest(CourseValidations.facultiesWithCourseValidationSchema),
-  CourseControllers.removeFacultiesFromCourse,
+  CourseControllers.removeFacultiesFromCourse
 );
 
-router.get("/", Auth(), CourseControllers.getAllCourses);
+router.get("/",
+  //  Auth(),
+    CourseControllers.getAllCourses
+  );
 
 export const CourseRoutes = router;

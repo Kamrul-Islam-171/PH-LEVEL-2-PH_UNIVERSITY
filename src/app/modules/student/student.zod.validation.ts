@@ -36,7 +36,7 @@ const localGuardianSchema = z.object({
 // Student schema
 const CreatestudentZodValidationSchema = z.object({
   body: z.object({
-    password: z.string().min(1, "password is required"),
+    password: z.string().optional(),
     student: z.object({
       name: userSchema,
       gender: z.enum(["Male", "Female"], {
@@ -45,7 +45,7 @@ const CreatestudentZodValidationSchema = z.object({
       dateOfBirth: z.string().min(1, "Date of Birth is required"),
       gurdian: guardianSchema,
       localGuardian: localGuardianSchema,
-      profileImg: z.string().min(1, "Profile image is required"),
+      // profileImg: z.string().min(1, "Profile image is required"),
 
       email: z
         .string()

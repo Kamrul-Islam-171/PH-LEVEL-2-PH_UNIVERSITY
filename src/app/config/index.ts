@@ -16,4 +16,8 @@ export default {
   refresh_secret: process.env.JWT_REFRESH_SECRET,
   access_expire:process.env.JWT_ACCESS_EXPIRES,
   refresh_expire:process.env.JWT_REFRESH_EXPIRES,
+  RESET_PASS_URL:process.env.RESET_PASS_URL,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUD_NAME:process.env.CLOUD_NAME,
+  CLOUD_API_SECRET:process.env.CLOUD_API_SECRET
 };

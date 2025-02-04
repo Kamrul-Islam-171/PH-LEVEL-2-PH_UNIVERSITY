@@ -11,11 +11,19 @@ import AppError from "../../errors/AppError";
 import { TFaculty } from "../faculty/faculty.interface";
 import { AcademicDepartmentModel } from "../academicDepartment/academicDepartment.model";
 import { Faculty } from "../faculty/faculty.model";
+import { sendImageToCloudinary } from "../../utils/sendImageToCloudinary";
 
-const CreateStudentIntoDB = async (password: string, student: Student) => {
+const CreateStudentIntoDB = async (
+  file: any,
+  password: string,
+  student: Student
+) => {
   // if(await Student.isUserExists(student.id)) {
   //     throw new Error('User Already Exists')
   // }
+
+  // console.log("file from service = ", file)
+  // console.log(student)
 
   //create user object
   const userData: Partial<TUser> = {};
@@ -32,6 +40,7 @@ const CreateStudentIntoDB = async (password: string, student: Student) => {
   // or we can write it like this
   userData.password = password || (config.default_pass as string);
   userData.role = "student";
+  userData.email = student.email;
 
   //set manually generated id
   // userData.id = '203000113'
@@ -49,7 +58,6 @@ const CreateStudentIntoDB = async (password: string, student: Student) => {
   //     //findone operation chalaite hobe
   // }
 
-
   //transaction and rollback use korbo and isolated aread create korbo
 
   const session = await mongoose.startSession();
@@ -59,35 +67,45 @@ const CreateStudentIntoDB = async (password: string, student: Student) => {
       admissionSemester as TAcademicSemester
     );
 
+    //send image to cloudinary
+    const imageName = `${userData.id}${student?.name?.firsName}`;
+    const path = file?.path;
+    const imgData = await sendImageToCloudinary(path, imageName);
+    // console.log(imgData)
+    
+
     //create a user (transaction-1, transaction er moddhe data array hisebe dite hobe)
-    const newUser = await UserModel.create([userData], {session}); // amar akta transaction start hoye gelo
+    const newUser = await UserModel.create([userData], { session }); // amar akta transaction start hoye gelo
 
     //create a student
 
     if (!newUser.length) {
-
       throw new AppError(httpStatus.BAD_REQUEST, "Failed to create user");
     }
-      student.id = newUser[0].id;
-      student.user = newUser[0]._id; //reference _id
+    student.id = newUser[0].id;
+    student.user = newUser[0]._id; //reference _id
+    student.profileImg = imgData?.secure_url;
+    // console.log(student)
 
-      //create a student (transaction - 2)
-      const newStudent = await StudentModel.create([student], {session});
-      if(!newStudent) {
-        throw new AppError(httpStatus.BAD_REQUEST, "Failed to create student");
-      }
+    //create a student (transaction - 2)
+    const newStudent = await StudentModel.create([student], { session });
+    // console.log("i am here", newStudent);
+    if (!newStudent) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Failed to create student");
+    }
 
-      await session.commitTransaction();
-      await session.endSession();
+    await session.commitTransaction();
+    await session.endSession();
 
-      return newStudent;
-    
+    return newStudent;
   } catch (error) {
     // console.log(error)
+    // console.log("i am here to abrot");
     await session.abortTransaction();
     await session.endSession();
-    throw new Error("Failed to create new student")
+    throw new Error("Failed to create new student");
   }
+  // console.log("i am here")
 };
 
 const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
@@ -98,15 +116,16 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
   userData.password = password || (config.default_pass as string);
 
   //set student role
-  userData.role = 'faculty';
+  userData.role = "faculty";
+  userData.email = payload.email;
 
   // find academic department info
   const academicDepartment = await AcademicDepartmentModel.findById(
-    payload.academicDepartment,
+    payload.academicDepartment
   );
 
   if (!academicDepartment) {
-    throw new AppError(400, 'Academic department not found');
+    throw new AppError(400, "Academic department not found");
   }
 
   const session = await mongoose.startSession();
@@ -116,7 +135,6 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
     //set  generated id
     userData.id = await generateFacultyId();
 
-
     // console.log({'userAfterHash':userData});
 
     // create a user (transaction-1)
@@ -124,7 +142,7 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
 
     //create a faculty
     if (!newUser.length) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create user');
+      throw new AppError(httpStatus.BAD_REQUEST, "Failed to create user");
     }
     // set id , _id as user
     payload.id = newUser[0].id;
@@ -135,7 +153,7 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
     const newFaculty = await Faculty.create([payload], { session });
 
     if (!newFaculty.length) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create faculty');
+      throw new AppError(httpStatus.BAD_REQUEST, "Failed to create faculty");
     }
 
     await session.commitTransaction();
@@ -149,8 +167,35 @@ const createFacultyIntoDB = async (password: string, payload: TFaculty) => {
   }
 };
 
+const getMe = async (userId: string, role: string) => {
+  // const decoded = verifyToken(token, config.jwt_access_secret as string);
+  // const { userId, role } = decoded;
+
+  let result = null;
+  if (role === "student") {
+    result = await StudentModel.findOne({ id: userId }).populate("user");
+  }
+  // if (role === 'admin') {
+  //   result = await Admin.findOne({ id: userId }).populate('user');
+  // }
+
+  if (role === "faculty") {
+    result = await Faculty.findOne({ id: userId }).populate("user");
+  }
+
+  return result;
+};
+
+const changeStatus = async (id: string, payload: { status: string }) => {
+  const result = await UserModel.findByIdAndUpdate(id, payload, {
+    new: true,
+  });
+  return result;
+};
 
 export const UserService = {
   CreateStudentIntoDB,
-  createFacultyIntoDB
+  createFacultyIntoDB,
+  getMe,
+  changeStatus,
 };

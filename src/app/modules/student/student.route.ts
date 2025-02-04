@@ -12,10 +12,13 @@ const router = express.Router();
 //we will call controller func
 // router.post('/create-student', StudentControllers.createStudent);
 
-router.get('/:studentID', StudentControllers.GetSingleSdudents);
+// admin and faculty sob student er id dekhta parbe. but akjon stu arek jon er ta parbe na
+// tai auth er moddhe st dey nai. but na dile nijeo dekhte parbo na. tai arekta route lagbe (/me) name e
+
+router.get('/:studentID', Auth('admin', 'faculty'), StudentControllers.GetSingleSdudents);
 router.delete('/:studentID', StudentControllers.DeleteSingleSdudents);
 // router.get('/get-all-stu', StudentControllers.GetSdudents);
-router.get('/',Auth(USER_ROLE.student), StudentControllers.getAllStudents);
+router.get('/', StudentControllers.getAllStudents);
 
 router.patch('/:studentID',ValidateRequest(studentZodValidations.UpdateStudentZodValidationSchema), StudentControllers.UpdateStudent)
 
